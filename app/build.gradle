@@ -1,0 +1,58 @@
+plugins {
+    id 'com.android.application'
+}
+
+def signingPropertiesFile = rootProject.file('keystore.properties')
+def signingProperties = new Properties()
+if (signingPropertiesFile.exists()) {
+    signingPropertiesFile.withInputStream { signingProperties.load(it) }
+}
+def releaseIsSigned = signingPropertiesFile.exists()
+
+android {
+    namespace 'com.nascent.soundpicker'
+    compileSdk 37
+
+    defaultConfig {
+        applicationId 'com.nascent.soundpicker'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '1.0'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    signingConfigs {
+        release {
+            if (signingPropertiesFile.exists()) {
+                storeFile rootProject.file(signingProperties['storeFile'])
+                storePassword signingProperties['storePassword']
+                keyAlias signingProperties['keyAlias']
+                keyPassword signingProperties['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            debuggable false
+            if (releaseIsSigned) signingConfig signingConfigs.release
+        }
+    }
+
+    androidComponents {
+        onVariants(selector().all()) { variant ->
+            variant.outputs.each { output ->
+                output.outputFileName.set(variant.name == 'release' && !releaseIsSigned ? 'Alternative-Sound-Picker-release-unsigned.apk' : "Alternative-Sound-Picker-${variant.name}.apk")
+            }
+        }
+    }
+}
+
+dependencies {
+}
